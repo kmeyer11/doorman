@@ -35,9 +35,16 @@ cd doorman
 pip install -e ".[all]"   # or [anthropic] / [openai] for just one provider, or no extra for heuristics-only
 ```
 
-The heuristics layer needs nothing beyond the standard library. The LLM judge and the
-interactive chat mode need `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` set for whichever
-provider you use.
+The heuristics layer itself imports nothing beyond the standard library — `pip install -e .`
+with no extras gets you `doorman scan`/`doorman benchmark` fully working offline. The LLM judge
+and the interactive chat mode additionally need `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` set
+for whichever provider you use.
+
+Set those either as real environment variables, or drop them in a local `.env` file — copy
+[`.env.example`](.env.example) to `.env` and fill in your keys. Doorman loads `.env`
+automatically (via `python-dotenv`, the one required dependency) on every CLI invocation,
+searching upward from your current directory; a real environment variable always takes
+precedence over the `.env` file. `.env` is gitignored, so your keys never get committed.
 
 ## Quickstart
 

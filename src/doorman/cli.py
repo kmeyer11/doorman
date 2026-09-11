@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+from dotenv import find_dotenv, load_dotenv
+
 from doorman.benchmark import default_dataset_path, evaluate, format_report, load_dataset
 from doorman.config import Thresholds
 from doorman.engine import Doorman, ScanResult, Verdict
@@ -136,6 +138,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Load API keys (and any DOORMAN_* config) from a .env file in or above the cwd, without
+    # overriding variables already set in the real environment.
+    load_dotenv(find_dotenv(usecwd=True))
+
     parser = build_parser()
     args = parser.parse_args(argv)
     if getattr(args, "command", None) == "chat" and args.judge_provider == "none":
