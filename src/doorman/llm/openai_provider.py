@@ -42,9 +42,13 @@ class OpenAIProvider(LLMProvider):
             tools=[_JUDGE_TOOL],
             tool_choice={"type": "function", "function": {"name": "report_verdict"}},
         )
-        tool_calls = response.choices[0].message.tool_calls
+        message = response.choices[0].message
+        tool_calls = message.tool_calls
         if not tool_calls:
-            raise RuntimeError("OpenAI judge did not return a tool call verdict")
+            # Some OpenAI-compatible backends (e.g. Gemini's compat layer) don't always honor a
+            # forced tool_choice and fall back to a plain-text reply instead of calling the tool.
+            detail = (message.content or "<empty>")[:200]
+            raise RuntimeError(f"{self.name} judge did not return a tool call verdict; got: {detail!r}")
         verdict = json.loads(tool_calls[0].function.arguments)
         return LLMVerdict(
             is_injection=bool(verdict["is_injection"]),

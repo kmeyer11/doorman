@@ -26,6 +26,7 @@ class ScanResult:
     score: int
     matches: list[HeuristicMatch]
     llm_verdict: LLMVerdict | None = None
+    judge_error: str | None = None
     latency_ms: float = 0.0
 
     @property
@@ -62,9 +63,14 @@ class Doorman:
         verdict = _verdict_for_score(heuristic_score, self.thresholds)
 
         llm_verdict = None
+        judge_error = None
         if self.judge is not None:
-            llm_verdict = self.judge.classify(text)
-            verdict = max(verdict, _verdict_for_llm(llm_verdict))
+            try:
+                llm_verdict = self.judge.classify(text)
+            except Exception as exc:  # noqa: BLE001 - a flaky judge falls back to heuristics-only, not a crash
+                judge_error = str(exc)
+            else:
+                verdict = max(verdict, _verdict_for_llm(llm_verdict))
 
         latency_ms = (time.perf_counter() - start) * 1000
         return ScanResult(
@@ -73,5 +79,6 @@ class Doorman:
             score=heuristic_score,
             matches=matches,
             llm_verdict=llm_verdict,
+            judge_error=judge_error,
             latency_ms=latency_ms,
         )

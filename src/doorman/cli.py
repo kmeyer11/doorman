@@ -43,6 +43,7 @@ def _print_scan_result(result: ScanResult, *, as_json: bool) -> None:
                 if result.llm_verdict
                 else None
             ),
+            "judge_error": result.judge_error,
             "latency_ms": round(result.latency_ms, 2),
         }
         print(json.dumps(payload, indent=2))
@@ -57,6 +58,8 @@ def _print_scan_result(result: ScanResult, *, as_json: bool) -> None:
             f"  - llm_judge: is_injection={lv.is_injection} confidence={lv.confidence:.2f} "
             f"category={lv.category} — {lv.reasoning}"
         )
+    elif result.judge_error:
+        print(f"  - llm_judge: ERROR ({result.judge_error}) — fell back to heuristics-only")
 
 
 def cmd_scan(args: argparse.Namespace) -> int:

@@ -197,10 +197,34 @@ positive was a message that merely *discussed* the phrase `"ignore previous inst
 quotes. That's exactly the gap the LLM judge layer exists to close: heuristics alone can't tell
 "discussing an attack" from "performing one," and they barely register **indirect injection**
 (malicious instructions smuggled inside pasted emails, reviews, or documents) or creative
-**roleplay jailbreaks**, since both routinely dodge any fixed pattern. A semantic judge that
-actually reads the message in context is needed for those. Run
-`doorman benchmark --llm --judge gemini` (free tier — see [Install](#install)) to see the
-combined numbers.
+**roleplay jailbreaks**, since both routinely dodge any fixed pattern.
+
+**With the LLM judge added** (`doorman benchmark --llm --judge gemini`, run live against Gemini's
+free tier):
+
+| Metric | Heuristics only | + LLM judge |
+|---|---|---|
+| Precision | 97.3% | 98.6% |
+| Recall | 50.0% | **98.6%** |
+| F1 | 66.1% | **98.6%** |
+| Accuracy | 65.4% | 98.1% |
+
+| Technique | Heuristics only | + LLM judge |
+|---|---|---|
+| indirect_injection | 10.0% | 100.0% |
+| roleplay_jailbreak | 33.3% | 91.7% |
+| instruction_override | 41.7% | 100.0% |
+| obfuscation | 50.0% | 100.0% |
+| translation_trick | 50.0% | 100.0% |
+| exfiltration | 80.0% | 100.0% |
+| delimiter_injection | 90.0% | 100.0% |
+
+A semantic judge that actually reads the message in context closes almost the entire gap —
+indirect injection goes from 10% to 100%, and the hardest category, creative roleplay jailbreaks,
+still has one miss out of twelve. The one asterisk on this run: 1 of the 107 judge calls failed
+outright (Gemini's OpenAI-compatible endpoint occasionally declines to honor a forced tool call
+and returns plain text instead) — Doorman catches that, falls back to the heuristic-only verdict
+for just that example, and reports it as a judge error rather than crashing the whole run.
 
 ## Project layout
 
@@ -226,6 +250,9 @@ tests/                   pytest suite (heuristics, engine, providers, CLI, REPL 
 - The benchmark is a curated dataset I wrote by hand, not an independently maintained public
   corpus — useful as a consistent, repeatable yardstick, but not a claim of generality.
 - No caching/rate-limiting around the LLM judge yet — every scan is a fresh API call when enabled.
+- A judge call that fails falls back to the heuristic-only verdict for that one message (and says
+  so, via `ScanResult.judge_error`) rather than retrying — seen in practice with Gemini's
+  OpenAI-compatible endpoint occasionally declining a forced tool call. No retry/backoff yet.
 
 ## License
 

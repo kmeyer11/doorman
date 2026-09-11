@@ -120,6 +120,8 @@ class ChatSession:
                 f"  - llm_judge: is_injection={lv.is_injection} confidence={lv.confidence:.2f} "
                 f"category={lv.category} — {lv.reasoning}"
             )
+        elif result.judge_error:
+            lines.append(f"  - llm_judge: ERROR ({result.judge_error}) — fell back to heuristics-only")
         return "\n".join(lines)
 
     def process_line(self, line: str) -> str:
@@ -133,7 +135,7 @@ class ChatSession:
                 result = self.engine.scan(line)
             except Exception as exc:  # noqa: BLE001 - REPL boundary: surface any SDK error, don't crash
                 return f"[error] judge failed: {exc}\nTip: /judge none or /protection off."
-            if self.verbose or result.verdict is not Verdict.ALLOW:
+            if self.verbose or result.verdict is not Verdict.ALLOW or result.judge_error:
                 summary = self._format_result(result)
             if result.verdict is Verdict.BLOCK:
                 return f"[doorman] BLOCKED — message was not forwarded to the target.\n{summary}"

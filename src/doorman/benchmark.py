@@ -58,14 +58,18 @@ class BenchmarkReport:
     f1: float
     accuracy: float
     per_technique: dict[str, tuple[int, int]]  # technique -> (caught, total)
+    judge_errors: int = 0
 
 
 def evaluate(rows: list[DatasetRow], engine: Doorman) -> BenchmarkReport:
     tp = fp = tn = fn = 0
+    judge_errors = 0
     per_technique: dict[str, list[int]] = {}
 
     for row in rows:
         result = engine.scan(row.text)
+        if result.judge_error is not None:
+            judge_errors += 1
         predicted_positive = result.verdict is not Verdict.ALLOW
         actual_positive = row.label == "injection"
 
@@ -101,6 +105,7 @@ def evaluate(rows: list[DatasetRow], engine: Doorman) -> BenchmarkReport:
         f1=f1,
         accuracy=accuracy,
         per_technique={k: (v[0], v[1]) for k, v in sorted(per_technique.items())},
+        judge_errors=judge_errors,
     )
 
 
@@ -114,6 +119,13 @@ def format_report(report: BenchmarkReport, *, title: str = "Doorman benchmark re
         f"- F1: {report.f1:.1%}",
         f"- Accuracy: {report.accuracy:.1%}",
         f"- Confusion: TP={report.tp} FP={report.fp} TN={report.tn} FN={report.fn}",
+    ]
+    if report.judge_errors:
+        lines.append(
+            f"- Judge errors: {report.judge_errors} example(s) fell back to heuristics-only "
+            "after the LLM judge call failed"
+        )
+    lines += [
         "",
         "| Technique | Caught | Total | Detection rate |",
         "|---|---|---|---|",

@@ -37,6 +37,18 @@ def test_malicious_message_is_blocked_without_calling_target():
     assert session.history == []
 
 
+def test_judge_failure_still_forwards_benign_message_but_reports_the_error():
+    target = FakeProvider(reply="general kenobi")
+    judge = FakeProvider(classify_error=RuntimeError("boom"))
+    session = make_session(target=target, judge=judge)
+
+    output = session.process_line("hello there")
+
+    assert "ERROR (boom)" in output
+    assert "general kenobi" in output  # heuristics alone allow it, so it still reaches the target
+    assert len(target.chat_calls) == 1
+
+
 def test_protection_off_forwards_even_malicious_messages():
     target = FakeProvider(reply="ok")
     session = make_session(target=target, protection=False)
