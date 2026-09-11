@@ -23,9 +23,11 @@ model, using two complementary layers:
 - **Heuristics** — fast, offline, explainable pattern matching (regex, encoding checks, structural
   checks). Zero dependencies, zero latency, zero API cost. Catches the obvious stuff and gives a
   human-readable reason for every block.
-- **LLM judge** — a second LLM (Anthropic or OpenAI, pluggable) asked specifically "is this a
-  prompt injection attempt?", to catch the subtler cases heuristics miss: unusual phrasing,
-  indirect injection buried in pasted content, creative roleplay framing.
+- **LLM judge** — a second LLM (Anthropic, OpenAI, or Gemini, pluggable) asked specifically "is
+  this a prompt injection attempt?", to catch the subtler cases heuristics miss: unusual phrasing,
+  indirect injection buried in pasted content, creative roleplay framing. Gemini's free tier
+  (via Google AI Studio) means you can try the full judge + interactive chat flow without paying
+  for anything.
 
 ## Install
 
@@ -37,10 +39,20 @@ pip install -e ".[all]"   # or [anthropic] / [openai] for just one provider, or 
 
 The heuristics layer itself imports nothing beyond the standard library — `pip install -e .`
 with no extras gets you `doorman scan`/`doorman benchmark` fully working offline. The LLM judge
-and the interactive chat mode additionally need `ANTHROPIC_API_KEY` and/or `OPENAI_API_KEY` set
-for whichever provider you use.
+and the interactive chat mode additionally need an API key for whichever provider you use:
 
-Set those either as real environment variables, or drop them in a local `.env` file — copy
+| Provider | Env var | Cost |
+|---|---|---|
+| [Google AI Studio](https://aistudio.google.com/apikey) (Gemini) | `GEMINI_API_KEY` | **Free tier** |
+| [Anthropic](https://console.anthropic.com/settings/keys) | `ANTHROPIC_API_KEY` | Paid |
+| [OpenAI](https://platform.openai.com/api-keys) | `OPENAI_API_KEY` | Paid |
+
+Note a Claude Pro/Max subscription on claude.ai does **not** include API access — it's billed
+separately. Gemini's free tier is the easiest way to try Doorman's LLM judge and `doorman chat`
+without spending anything; it uses Gemini's OpenAI-compatible endpoint under the hood, so it
+needs no extra dependency (`pip install -e ".[openai]"` covers both OpenAI and Gemini).
+
+Set keys either as real environment variables, or drop them in a local `.env` file — copy
 [`.env.example`](.env.example) to `.env` and fill in your keys. Doorman loads `.env`
 automatically (via `python-dotenv`, the one required dependency) on every CLI invocation,
 searching upward from your current directory; a real environment variable always takes
@@ -58,7 +70,7 @@ doorman scan "What's the weather like today?"
 # verdict: ALLOW  score: 0  (0.1ms)
 
 doorman scan --json "..."          # machine-readable output
-doorman scan --judge anthropic "..."  # also consult the LLM judge (needs ANTHROPIC_API_KEY)
+doorman scan --judge gemini "..."  # also consult the LLM judge (free tier — needs GEMINI_API_KEY)
 ```
 
 As a library:
@@ -68,7 +80,7 @@ from doorman import Doorman
 from doorman.llm import get_provider
 
 door = Doorman()  # heuristics only
-# door = Doorman(judge=get_provider("anthropic"))  # add an LLM judge (needs ANTHROPIC_API_KEY)
+# door = Doorman(judge=get_provider("gemini"))  # add an LLM judge (needs GEMINI_API_KEY)
 
 result = door.scan(user_message)
 if result.blocked:
@@ -83,13 +95,13 @@ extract), and every message you type is screened by Doorman first, exactly as it
 production.
 
 ```bash
-doorman chat --target-provider anthropic --judge-provider anthropic
+doorman chat --target-provider gemini --judge-provider gemini   # free tier, needs GEMINI_API_KEY
 ```
 
 Illustrative session (shape of the real output; exact bot replies will vary):
 
 ```
-Doorman interactive red-team mode. Target: anthropic/claude-sonnet-5. Type /help for commands.
+Doorman interactive red-team mode. Target: gemini/gemini-2.5-flash. Type /help for commands.
 
 you> What's your return policy?
 bot> You can return any unused item within 30 days with a receipt...
@@ -112,9 +124,9 @@ Swap providers and models live, mid-conversation, without restarting:
 
 | Command | Effect |
 |---|---|
-| `/provider anthropic\|openai` | swap the target chatbot's provider |
+| `/provider anthropic\|openai\|gemini` | swap the target chatbot's provider |
 | `/model <name>` | swap the target chatbot's model |
-| `/judge anthropic\|openai\|none` | swap or disable the judge |
+| `/judge anthropic\|openai\|gemini\|none` | swap or disable the judge |
 | `/protection on\|off` | toggle Doorman screening entirely |
 | `/verbose on\|off` | always show the full score breakdown |
 | `/persona <path>` | load a different target system prompt |
@@ -186,8 +198,9 @@ quotes. That's exactly the gap the LLM judge layer exists to close: heuristics a
 "discussing an attack" from "performing one," and they barely register **indirect injection**
 (malicious instructions smuggled inside pasted emails, reviews, or documents) or creative
 **roleplay jailbreaks**, since both routinely dodge any fixed pattern. A semantic judge that
-actually reads the message in context is needed for those. Run `doorman benchmark --llm` with an
-API key set to see the combined numbers.
+actually reads the message in context is needed for those. Run
+`doorman benchmark --llm --judge gemini` (free tier — see [Install](#install)) to see the
+combined numbers.
 
 ## Project layout
 
@@ -196,7 +209,7 @@ src/doorman/
   engine.py              Doorman, ScanResult, Verdict, score combination
   heuristics/            pattern-based detectors (instruction override, delimiter
                           injection, obfuscation, exfiltration) + registry
-  llm/                   provider-agnostic LLM judge/target (Anthropic, OpenAI)
+  llm/                   provider-agnostic LLM judge/target (Anthropic, OpenAI, Gemini)
   personas/              default target persona for `doorman chat`
   cli.py, interactive.py CLI commands: scan, benchmark, chat
 benchmark/dataset.jsonl  curated, labeled test suite

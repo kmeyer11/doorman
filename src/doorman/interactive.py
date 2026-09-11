@@ -12,16 +12,16 @@ DEFAULT_PERSONA_FILE = "support_bot.md"
 
 HELP_TEXT = """\
 Commands:
-  /provider <anthropic|openai>   swap the target chatbot's provider
-  /model <name>                  swap the target chatbot's model
-  /judge <anthropic|openai|none> swap (or disable) the judge provider
-  /judge-model <name>            swap the judge model
-  /protection <on|off>           toggle Doorman screening
-  /persona <path>                load a different target system prompt
-  /verbose <on|off>              show full heuristic/LLM score breakdown
-  /reset                         clear the target conversation history
-  /help                          show this message
-  /quit                          exit\
+  /provider <anthropic|openai|gemini>    swap the target chatbot's provider
+  /model <name>                          swap the target chatbot's model
+  /judge <anthropic|openai|gemini|none>  swap (or disable) the judge provider
+  /judge-model <name>                    swap the judge model
+  /protection <on|off>                   toggle Doorman screening
+  /persona <path>                        load a different target system prompt
+  /verbose <on|off>                      show full heuristic/LLM score breakdown
+  /reset                                 clear the target conversation history
+  /help                                  show this message
+  /quit                                  exit\
 """
 
 

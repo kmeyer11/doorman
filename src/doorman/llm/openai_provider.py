@@ -24,10 +24,13 @@ _JUDGE_TOOL = {
 
 
 class OpenAIProvider(LLMProvider):
-    def __init__(self, model: str, api_key: str | None = None):
-        self.name = "openai"
+    """Talks to the OpenAI chat completions API — or any OpenAI-compatible endpoint (Gemini,
+    Groq, Ollama, ...) when constructed with a different `base_url`."""
+
+    def __init__(self, model: str, api_key: str | None = None, base_url: str | None = None, name: str = "openai"):
+        self.name = name
         self.model = model
-        self._client = openai.OpenAI(api_key=api_key)
+        self._client = openai.OpenAI(api_key=api_key, base_url=base_url)
 
     def classify(self, text: str) -> LLMVerdict:
         response = self._client.chat.completions.create(

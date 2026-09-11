@@ -10,6 +10,11 @@ DEFAULT_ANTHROPIC_JUDGE_MODEL = "claude-haiku-4-5-20251001"
 DEFAULT_ANTHROPIC_CHAT_MODEL = "claude-sonnet-5"
 DEFAULT_OPENAI_JUDGE_MODEL = "gpt-4o-mini"
 DEFAULT_OPENAI_CHAT_MODEL = "gpt-4o-mini"
+# Free tier via Google AI Studio's OpenAI-compatible endpoint.
+DEFAULT_GEMINI_JUDGE_MODEL = "gemini-2.5-flash"
+DEFAULT_GEMINI_CHAT_MODEL = "gemini-2.5-flash"
+
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 
 @dataclass(frozen=True)
@@ -29,6 +34,7 @@ def default_judge_model(provider: str) -> str:
     return {
         "anthropic": DEFAULT_ANTHROPIC_JUDGE_MODEL,
         "openai": DEFAULT_OPENAI_JUDGE_MODEL,
+        "gemini": DEFAULT_GEMINI_JUDGE_MODEL,
     }[provider]
 
 
@@ -36,4 +42,5 @@ def default_chat_model(provider: str) -> str:
     return {
         "anthropic": DEFAULT_ANTHROPIC_CHAT_MODEL,
         "openai": DEFAULT_OPENAI_CHAT_MODEL,
+        "gemini": DEFAULT_GEMINI_CHAT_MODEL,
     }[provider]
